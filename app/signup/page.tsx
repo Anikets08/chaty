@@ -49,23 +49,7 @@ function Signup() {
     email: string,
     password: string,
     faceData: string
-  ) => {
-    const response = await fetch("/api/auth/signup", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ name, email, password, faceData }),
-    });
-    const data = await response.json();
-
-    // check for status
-    if (response.ok) {
-      localStorage.setItem("token", data.token);
-    } else {
-      console.log("error", data.message);
-    }
-  };
+  ) => {};
 
   return (
     <div className="relative">
