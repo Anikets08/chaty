@@ -1,0 +1,62 @@
+Full Stack Developer Task: Real-Time Chat Application with Speech-to-Text and Face Matching
+
+Objective
+Develop a real-time chat application where users can sign up, create chat rooms, and communicate using text or speech-to-text transcription. The application should also implement face matching for secure authentication, ensuring that users verify their identity by taking a selfie during registration and login.
+
+Task Requirements
+
+
+1. User Authentication with Face Matching
+Implement user sign-up with a username, password, and a selfie taken through the webcam.
+The selfie will be stored securely as the user’s face data.
+During login, users will be required to take another real-time selfie.
+The new selfie should be matched against the stored face data to verify the user's identity.
+If the match is successful, the user is logged in; otherwise, access is denied.
+Use a face recognition API (e.g., AWS Rekognition).
+
+
+2. Chat Rooms & Messaging
+Users can create chat rooms and invite others to join.
+Inside a chat room, users can send and receive text messages in real time.
+Messages should include the sender’s username and timestamp.
+Store messages in a database to allow users to access previous conversations.
+
+
+3. Speech-to-Text Integration
+Users should have the option to speak into their microphone, and the system should convert speech into text.
+Allow users to review and edit the transcribed text before sending it as a message.
+Use Google Speech-to-Text API for transcription.
+
+
+4. Backend API & Database
+- Use Next.js API routes to handle:
+User authentication (Sign up, Login, Face Matching).
+Chat room creation and management.
+Message storage and retrieval.
+- Store messages, chat rooms, and user face data securely in the database of your choice.
+
+
+5. Real-Time Communication (WebSockets)
+Implement WebSockets (Socket.IO) for real-time messaging.
+Ensure all users in a chat room receive messages instantly.
+Handle user connection and disconnection events.
+
+
+6. Deployment & Documentation
+Deploy the application on Vercel and share the link.  
+Provide a GitHub repository with a README
+
+
+
+Evaluation Criteria
+Code Quality – Clean, modular, and maintainable code.
+Security & Authentication – Proper face matching implementation, secure password hashing.
+Real-Time Communication – Efficient WebSocket implementation with chat rooms.
+Speech-to-Text Integration – Accurate transcription and a user-friendly experience.
+Database Design & Optimization – Efficient storage and retrieval of messages and user data.
+Deployment & Documentation – A working, fully functional application with clear setup steps.
+
+
+Submission Details
+Deadline: 2 Days
+Submit your GitHub repository link and deployed application link through the form.
