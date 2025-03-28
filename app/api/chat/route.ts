@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Room not found" }, { status: 404 });
     }
 
-    const isMember = room.members.some((member) => member.id === userId);
+    const isMember = room.members.some((member: any) => member.id === userId);
     if (!isMember) {
       return NextResponse.json(
         {
