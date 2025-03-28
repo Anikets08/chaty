@@ -2,6 +2,8 @@
 
 Chaty is a modern real-time chat application built with Next.js, WebSockets, and a robust backend architecture. It enables users to communicate in real-time within chat rooms, with features like user presence detection and instant messaging.
 
+> Note: Websockets won't work on deployed version, since deployment of websockets doesnt work on free plans, please run it locally.
+
 ## Features
 
 - **Real-time Communication**: Messages are delivered instantly via WebSockets

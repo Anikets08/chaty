@@ -6,17 +6,17 @@ import getUserName from "@/services/user/getUserName.user";
 import useUserStore from "@/store/userStore";
 import useWebSocketStore from "@/store/websocketStore";
 import { decode, JwtPayload } from "jsonwebtoken";
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function Home() {
   const router = useRouter();
   const { userId, setUserId, userName, setUserName } = useUserStore();
   const { connect, disconnect, isConnected } = useWebSocketStore();
-
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
     const token = localStorage.getItem("token");
-    console.log("do i have token", token);
     if (token === null || token === undefined) {
       router.push("/login");
       return;
@@ -31,6 +31,7 @@ export default function Home() {
       if (!userName) {
         fetchUserName();
       }
+      setLoading(false);
     } catch (error) {
       console.error("Error decoding token:", error);
       router.push("/login");
@@ -59,10 +60,21 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <Room />
-      <RoomSidebar />
-    </div>
+    <>
+      {loading && (
+        <div className="flex h-screen">
+          <div className="m-auto">
+            <Loader2 className="animate-spin" />
+          </div>
+        </div>
+      )}
+      {!loading && (
+        <div className="flex h-screen">
+          <Sidebar />
+          <Room />
+          <RoomSidebar />
+        </div>
+      )}
+    </>
   );
 }

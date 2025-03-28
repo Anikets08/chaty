@@ -61,13 +61,10 @@ const stableConnect = (() => {
         if (globalSocket && globalSocket.readyState !== WebSocket.CLOSED) {
           globalSocket.close();
         }
-
-        const PORT = process.env.PORT || 2134;
         const provider =
           process.env.NODE_ENV === "development"
-            ? `ws://localhost:${PORT}`
-            : `wss://chaty-ay2m.onrender.com:${PORT}`;
-        console.log("provider", provider);
+            ? `ws://localhost:2134`
+            : `wss://chaty-ay2m.onrender.com:1000`;
         globalSocket = new WebSocket(provider);
 
         globalSocket.onopen = () => {

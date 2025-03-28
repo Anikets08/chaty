@@ -49,13 +49,9 @@ function FaceRecognitionLogin({
     startVideo();
 
     return () => {
-      console.log("Component unmounting, stopping camera...");
-
       if (streamRef.current) {
         const tracks = streamRef.current.getTracks();
-        console.log(`Stopping ${tracks.length} tracks`);
         tracks.forEach((track) => {
-          console.log(`Stopping track: ${track.kind}`);
           track.stop();
         });
 
