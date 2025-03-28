@@ -22,16 +22,12 @@ export const initSocket = (res: NextApiResponseServerIO) => {
     res.socket.server.io = io;
 
     io.on("connection", (socket) => {
-      console.log("Client connected:", socket.id);
-
       socket.on("join-room", (roomId: string) => {
         socket.join(roomId);
-        console.log(`User ${socket.id} joined room ${roomId}`);
       });
 
       socket.on("leave-room", (roomId: string) => {
         socket.leave(roomId);
-        console.log(`User ${socket.id} left room ${roomId}`);
       });
 
       socket.on("send-message", ({ roomId, message, userId }) => {
@@ -42,9 +38,7 @@ export const initSocket = (res: NextApiResponseServerIO) => {
         });
       });
 
-      socket.on("disconnect", () => {
-        console.log("Client disconnected:", socket.id);
-      });
+      socket.on("disconnect", () => {});
     });
   }
   return res.socket.server.io;

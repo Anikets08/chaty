@@ -16,6 +16,7 @@ export default function Home() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+    console.log("do i have token", token);
     if (token === null || token === undefined) {
       router.push("/login");
       return;
@@ -24,7 +25,6 @@ export default function Home() {
     try {
       const decodedToken = decode(token) as JwtPayload;
       const getUserId = decodedToken?.userId;
-      console.log("getUserId", getUserId);
       if (getUserId && !userId) {
         setUserId(getUserId);
       }

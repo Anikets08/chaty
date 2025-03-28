@@ -114,7 +114,6 @@ function AuthFieldToggler() {
   // Handle face capture completion
   const handleFaceCaptured = useCallback(
     async (descriptor: Float32Array) => {
-      console.log("descriptor", descriptor);
       if (isSignup && signupData) {
         // setFaceDescriptor(descriptor);
         setShowFaceDialog(false);
@@ -133,7 +132,6 @@ function AuthFieldToggler() {
           toast.success("Signup successful!");
           router.replace("/");
         } catch (message) {
-          console.log("Error:", message);
           toast.error(message as string);
         }
         setLoading(false);

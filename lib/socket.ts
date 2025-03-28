@@ -16,8 +16,6 @@ export const initSocket = (res: NextApiResponseServerIO) => {
     res.socket.server.io = io;
 
     io.on("connection", (socket) => {
-      console.log("Client connected");
-
       socket.on("join-room", (roomId: string) => {
         socket.join(roomId);
       });
@@ -30,9 +28,7 @@ export const initSocket = (res: NextApiResponseServerIO) => {
         io.to(message.roomId).emit("new-message", message);
       });
 
-      socket.on("disconnect", () => {
-        console.log("Client disconnected");
-      });
+      socket.on("disconnect", () => {});
     });
   }
   return res.socket.server.io;

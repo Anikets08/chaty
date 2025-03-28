@@ -5,12 +5,12 @@ const WebSocket = require("ws");
 
 // Enable WebSocket server debugging
 const DEBUG = true;
-
+const server = app.listen(PORT, () => {
+  console.log(`HTTP Server running on port ${PORT}`);
+});
 // Create a WebSocket server completely detached from the HTTP server.
 const wss = new WebSocket.Server({
-  port: 8181,
-  // Add ping timeout to detect disconnected clients faster
-  clientTracking: true,
+  server,
 });
 
 // Store active rooms and their members with user IDs
@@ -299,9 +299,4 @@ app.get("/stats", (req, res) => {
   };
 
   res.json(stats);
-});
-
-app.listen(PORT, () => {
-  console.log(`HTTP Server running on port ${PORT}`);
-  console.log("WebSocket server running on ws://localhost:8181");
 });

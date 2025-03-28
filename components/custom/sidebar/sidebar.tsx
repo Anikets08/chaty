@@ -17,7 +17,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useRouter } from "next/navigation";
 import useRoomStore from "@/store/roomStore";
 import useUserStore from "@/store/userStore";
 
@@ -44,21 +43,15 @@ function Sidebar() {
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const [isJoiningRoom, setIsJoiningRoom] = useState(false);
   const [joinError, setJoinError] = useState("");
-  const router = useRouter();
 
   useEffect(() => {
     fetchRooms();
-  }, []);
+  }, [userId]);
 
   const fetchRooms = async () => {
     try {
+      if (!userId) return;
       setLoading(true);
-      const token = localStorage.getItem("token");
-      if (!token || !userId) {
-        router.push("/login");
-        return;
-      }
-
       const response = await fetch(`/api/room?userId=${userId}`);
       if (!response.ok) throw new Error("Failed to fetch rooms");
 

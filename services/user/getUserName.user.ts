@@ -15,10 +15,8 @@ const getUserName = async (token: string): Promise<string | undefined> => {
     }
 
     const data = await response.json();
-    console.log("userDataName", data);
     return data.userName;
   } catch (error) {
-    console.error("Error in getUserName service:", error);
     return undefined;
   }
 };

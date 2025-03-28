@@ -19,8 +19,6 @@ const signupService = async ({
   const data = await response.json();
   if (response.ok) {
     localStorage.setItem("token", data.token);
-  } else {
-    console.log("error", data.message);
   }
 };
 export default signupService;

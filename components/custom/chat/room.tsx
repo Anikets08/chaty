@@ -1,11 +1,14 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Copy, Check } from "lucide-react";
+import { Send, Copy, Check, Mic, MicOff } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import useRoomStore from "@/store/roomStore";
 import useUserStore from "@/store/userStore";
 import useWebSocketStore from "@/store/websocketStore";
+import SpeechRecognition, {
+  useSpeechRecognition,
+} from "react-speech-recognition";
 import {
   Tooltip,
   TooltipContent,
@@ -58,8 +61,23 @@ function Room() {
   const [copied, setCopied] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Speech recognition configuration
+  const {
+    transcript,
+    listening,
+    resetTranscript,
+    browserSupportsSpeechRecognition,
+  } = useSpeechRecognition();
+
+  // Update message input when transcript changes
   useEffect(() => {
-    if (selectedRoomId && userId && isConnected) {
+    if (transcript) {
+      setMessageInput(transcript);
+    }
+  }, [transcript]);
+
+  useEffect(() => {
+    if (selectedRoomId && userId) {
       joinRoom(selectedRoomId, userId);
       fetchRoomDetails();
       fetchMessages();
@@ -118,14 +136,7 @@ function Room() {
 
   // Debug WebSocket connection status
   useEffect(() => {
-    console.log(
-      `Room component WebSocket connection status: ${
-        isConnected ? "Connected" : "Disconnected"
-      }`
-    );
-    return () => {
-      console.log("Room component unmounting");
-    };
+    return () => {};
   }, [isConnected]);
 
   useEffect(() => {
@@ -194,6 +205,18 @@ function Room() {
 
       if (!response.ok) throw new Error("Failed to send message");
       setMessageInput("");
+      resetTranscript(); // Reset the speech transcript after sending
+
+      if (!isConnected) {
+        messages.push({
+          content: messageInput,
+          roomId: selectedRoomId,
+          userId: userId,
+          userName: userName || "Anonymous",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      }
     } catch (error) {
       console.error("Error sending message:", error);
     } finally {
@@ -213,6 +236,15 @@ function Room() {
       navigator.clipboard.writeText(selectedRoomId);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  // Toggle speech recognition
+  const toggleListening = () => {
+    if (listening) {
+      SpeechRecognition.stopListening();
+    } else {
+      SpeechRecognition.startListening({ continuous: true });
     }
   };
 
@@ -273,7 +305,6 @@ function Room() {
         ) : (
           <div className="space-y-4">
             {messages.map((message, index) => {
-              // console.log("FUCK message", message);
               const isCurrentUser = message.userId === userId;
               return (
                 <div
@@ -319,9 +350,35 @@ function Room() {
           value={messageInput}
           onChange={(e) => setMessageInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type a message..."
+          placeholder={listening ? "Listening..." : "Type a message..."}
           className="mr-2"
         />
+
+        {/* Speech recognition toggle button */}
+        {browserSupportsSpeechRecognition && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={toggleListening}
+                  variant={listening ? "destructive" : "outline"}
+                  className="mr-2"
+                  size="icon"
+                >
+                  {listening ? (
+                    <MicOff className="h-4 w-4" />
+                  ) : (
+                    <Mic className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{listening ? "Stop dictation" : "Start dictation"}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+
         <Button
           onClick={sendMessage}
           disabled={
@@ -332,6 +389,13 @@ function Room() {
           <Send className="h-4 w-4" />
         </Button>
       </div>
+
+      {/* Show listening status indicator */}
+      {listening && (
+        <div className="text-xs text-green-600 mt-1">
+          Microphone is on. Speak to type your message.
+        </div>
+      )}
     </div>
   );
 }

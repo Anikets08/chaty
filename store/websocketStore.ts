@@ -62,13 +62,15 @@ const stableConnect = (() => {
           globalSocket.close();
         }
 
-        console.log(
-          `Creating new WebSocket connection (attempt ${connectionAttempts})`
-        );
-        globalSocket = new WebSocket("ws://localhost:8181");
+        const PORT = process.env.PORT || 2134;
+        const provider =
+          process.env.NODE_ENV === "development"
+            ? `ws://localhost:${PORT}`
+            : `wss://chaty-ay2m.onrender.com:${PORT}`;
+        console.log("provider", provider);
+        globalSocket = new WebSocket(provider);
 
         globalSocket.onopen = () => {
-          console.log("WebSocket connected successfully");
           isConnecting = false;
           connectionAttempts = 0;
           setState({ socket: globalSocket, isConnected: true });
@@ -99,7 +101,6 @@ const stableConnect = (() => {
 
             switch (message.type) {
               case "CHAT_MESSAGE":
-                console.log("DUCK33 message", message);
                 setState((state: WebSocketStore) => ({
                   messages: {
                     ...state.messages,
@@ -131,9 +132,6 @@ const stableConnect = (() => {
         };
 
         globalSocket.onclose = (event) => {
-          console.log(
-            `WebSocket disconnected (${event.code}: ${event.reason})`
-          );
           isConnecting = false;
           setState({ isConnected: false });
 
@@ -147,19 +145,15 @@ const stableConnect = (() => {
             // Attempt to reconnect after a delay, with increasing backoff
             if (!reconnectTimer) {
               const delay = Math.min(2000 * connectionAttempts, 10000);
-              console.log(`Scheduling reconnect in ${delay}ms`);
               reconnectTimer = setTimeout(() => {
                 reconnectTimer = null;
-                console.log("Attempting to reconnect...");
                 connectFn?.();
               }, delay);
             }
           }
         };
 
-        globalSocket.onerror = (error) => {
-          console.error("WebSocket error:", error);
-        };
+        globalSocket.onerror = (error) => {};
 
         setState({ socket: globalSocket });
       };
@@ -251,7 +245,6 @@ const useWebSocketStore = create<WebSocketStore>((set, get) => ({
 
     // Only close if we are really disconnecting the app, not during hot reloads
     if (globalSocket && !isConnecting) {
-      console.log("Intentionally closing WebSocket connection");
       const socket = globalSocket;
       globalSocket = null;
       socket.close(1000, "User disconnected");

@@ -17,44 +17,77 @@ function FaceRecognitionLogin({
 }: FaceRecognitionLoginProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [internalMode, setInternalMode] = useState<"signup" | "login">(mode);
-
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isCameraLoading, setIsCameraLoading] = useState(true);
+  const [modelsLoaded, setModelsLoaded] = useState(false);
 
   useEffect(() => {
-    const loadModels = async () => {
-      const uri = "/models";
-      await faceapi.nets.ssdMobilenetv1.loadFromUri(uri);
-      await faceapi.nets.faceLandmark68Net.loadFromUri(uri);
-      await faceapi.nets.faceRecognitionNet.loadFromUri(uri);
+    const startVideo = async () => {
+      setIsCameraLoading(true);
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+        });
+
+        streamRef.current = stream;
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+
+          videoRef.current.onloadedmetadata = () => {
+            setIsCameraLoading(false);
+          };
+        }
+      } catch (error) {
+        console.error("Error accessing the camera:", error);
+        setIsCameraLoading(false);
+      }
     };
 
-    loadModels().then(startVideo);
+    startVideo();
+
     return () => {
-      // Cleanup video stream when component unmounts
-      if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        const tracks = stream.getTracks();
-        tracks.forEach((track) => track.stop());
+      console.log("Component unmounting, stopping camera...");
+
+      if (streamRef.current) {
+        const tracks = streamRef.current.getTracks();
+        console.log(`Stopping ${tracks.length} tracks`);
+        tracks.forEach((track) => {
+          console.log(`Stopping track: ${track.kind}`);
+          track.stop();
+        });
+
+        streamRef.current = null;
+      }
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
       }
     };
   }, []);
 
-  // Update internal mode when prop changes
+  useEffect(() => {
+    const loadModels = async () => {
+      setModelsLoaded(false);
+      const uri = "/models";
+      try {
+        await faceapi.nets.ssdMobilenetv1.loadFromUri(uri);
+        await faceapi.nets.faceLandmark68Net.loadFromUri(uri);
+        await faceapi.nets.faceRecognitionNet.loadFromUri(uri);
+        setModelsLoaded(true);
+      } catch (error) {
+        console.error("Error loading face recognition models:", error);
+      }
+    };
+
+    loadModels();
+  }, []);
+
   useEffect(() => {
     setInternalMode(mode);
   }, [mode]);
-
-  const startVideo = () => {
-    navigator.mediaDevices
-      .getUserMedia({ video: true })
-      .then((stream) => {
-        if (videoRef.current) videoRef.current.srcObject = stream;
-      })
-      .catch((error) => {
-        console.error("Error accessing the camera:", error);
-      });
-  };
 
   const handleSignup = async () => {
     if (!videoRef.current) return;
@@ -99,13 +132,11 @@ function FaceRecognitionLogin({
         const float32DbUserDescriptor = new Float32Array(
           dbUserDescriptor.split(",").map(Number)
         );
-        // Create a face matcher with the stored users
         const labeledDescriptors = [
           new faceapi.LabeledFaceDescriptors("user", [float32DbUserDescriptor]),
         ];
-        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.4); // Reduced threshold to 0.4 for stricter matching
+        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.4);
 
-        // Try to match the detected face
         const match = faceMatcher.findBestMatch(detection.descriptor);
         if (onDoneVerification) {
           onDoneVerification(match.distance < 0.4);
@@ -124,6 +155,19 @@ function FaceRecognitionLogin({
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="relative">
+        {isCameraLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg z-10">
+            <div className="flex flex-col items-center space-y-2">
+              <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-sm text-gray-600">
+                {!modelsLoaded
+                  ? "Loading face models..."
+                  : "Initializing camera..."}
+              </p>
+            </div>
+          </div>
+        )}
+
         <video
           ref={videoRef}
           autoPlay
@@ -151,6 +195,7 @@ function FaceRecognitionLogin({
                 ? "bg-blue-500 text-white"
                 : "bg-gray-200"
             }`}
+            disabled={isCameraLoading || !modelsLoaded}
           >
             Signup Mode
           </button>
@@ -161,6 +206,7 @@ function FaceRecognitionLogin({
                 ? "bg-blue-500 text-white"
                 : "bg-gray-200"
             }`}
+            disabled={isCameraLoading || !modelsLoaded}
           >
             Login Mode
           </button>
@@ -169,11 +215,13 @@ function FaceRecognitionLogin({
 
       <button
         onClick={internalMode === "signup" ? handleSignup : handleLogin}
-        disabled={isProcessing}
+        disabled={isProcessing || isCameraLoading || !modelsLoaded}
         className="px-6 py-2 bg-green-500 text-white rounded disabled:bg-gray-400"
       >
         {isProcessing
           ? "Processing..."
+          : isCameraLoading || !modelsLoaded
+          ? "Loading..."
           : internalMode === "signup"
           ? "Register Face"
           : "Login with Face"}
