@@ -1,17 +1,24 @@
+import getUserByToken from "@/services/user/getUserByToken.user";
 import * as faceapi from "face-api.js";
 import { useEffect, useRef, useState } from "react";
 
-interface User {
-  id: string;
-  faceDescriptor: Float32Array;
+interface FaceRecognitionLoginProps {
+  mode?: "signup" | "login";
+  onFaceCaptured?: (descriptor: Float32Array) => void;
+  token?: string | null;
+  onDoneVerification?: (success: boolean) => void;
 }
 
-function FaceRecognitionLogin() {
+function FaceRecognitionLogin({
+  mode = "login",
+  onFaceCaptured,
+  token,
+  onDoneVerification,
+}: FaceRecognitionLoginProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [mode, setMode] = useState<"signup" | "login">("login");
-  const [users, setUsers] = useState<User[]>([]);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [internalMode, setInternalMode] = useState<"signup" | "login">(mode);
+
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
@@ -23,7 +30,20 @@ function FaceRecognitionLogin() {
     };
 
     loadModels().then(startVideo);
+    return () => {
+      // Cleanup video stream when component unmounts
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        const tracks = stream.getTracks();
+        tracks.forEach((track) => track.stop());
+      }
+    };
   }, []);
+
+  // Update internal mode when prop changes
+  useEffect(() => {
+    setInternalMode(mode);
+  }, [mode]);
 
   const startVideo = () => {
     navigator.mediaDevices
@@ -47,12 +67,11 @@ function FaceRecognitionLogin() {
         .withFaceDescriptor();
 
       if (detection) {
-        const newUser: User = {
-          id: `user_${Date.now()}`,
-          faceDescriptor: detection.descriptor,
-        };
-        setUsers((prev) => [...prev, newUser]);
-        alert("Face registered successfully!");
+        if (onFaceCaptured) {
+          onFaceCaptured(detection.descriptor);
+        } else {
+          alert("Face registered successfully!");
+        }
       } else {
         alert("No face detected. Please try again.");
       }
@@ -65,43 +84,31 @@ function FaceRecognitionLogin() {
   };
 
   const handleLogin = async () => {
+    if (token === undefined || token === null) return;
     if (!videoRef.current) return;
     setIsProcessing(true);
-
     try {
-      // First check if there are any registered users
-      if (users.length === 0) {
-        alert("No registered users found. Please signup first.");
-        setIsProcessing(false);
-        return;
-      }
-
       const detection = await faceapi
         .detectSingleFace(videoRef.current)
         .withFaceLandmarks()
         .withFaceDescriptor();
 
       if (detection) {
-        // Create a face matcher with the stored users
-        const labeledDescriptors = users.map(
-          (user) =>
-            new faceapi.LabeledFaceDescriptors(user.id, [user.faceDescriptor])
+        const dbUserDescriptor = await getUserByToken(token);
+        if (dbUserDescriptor === null || dbUserDescriptor === undefined) return;
+        const float32DbUserDescriptor = new Float32Array(
+          dbUserDescriptor.split(",").map(Number)
         );
+        // Create a face matcher with the stored users
+        const labeledDescriptors = [
+          new faceapi.LabeledFaceDescriptors("user", [float32DbUserDescriptor]),
+        ];
         const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.4); // Reduced threshold to 0.4 for stricter matching
 
         // Try to match the detected face
         const match = faceMatcher.findBestMatch(detection.descriptor);
-
-        if (match.distance < 0.4) {
-          // Using same threshold as above
-          const matchedUser = users.find((user) => user.id === match.label);
-          setCurrentUser(matchedUser || null);
-          alert("Login successful!");
-        } else {
-          alert(
-            "Face not recognized. Please try again or register a new face."
-          );
-          setCurrentUser(null);
+        if (onDoneVerification) {
+          onDoneVerification(match.distance < 0.4);
         }
       } else {
         alert("No face detected. Please try again.");
@@ -135,48 +142,42 @@ function FaceRecognitionLogin() {
         />
       </div>
 
-      <div className="flex gap-4">
-        <button
-          onClick={() => setMode("signup")}
-          className={`px-4 py-2 rounded ${
-            mode === "signup" ? "bg-blue-500 text-white" : "bg-gray-200"
-          }`}
-        >
-          Signup Mode
-        </button>
-        <button
-          onClick={() => setMode("login")}
-          className={`px-4 py-2 rounded ${
-            mode === "login" ? "bg-blue-500 text-white" : "bg-gray-200"
-          }`}
-        >
-          Login Mode
-        </button>
-      </div>
+      {!onFaceCaptured && (
+        <div className="flex gap-4">
+          <button
+            onClick={() => setInternalMode("signup")}
+            className={`px-4 py-2 rounded ${
+              internalMode === "signup"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200"
+            }`}
+          >
+            Signup Mode
+          </button>
+          <button
+            onClick={() => setInternalMode("login")}
+            className={`px-4 py-2 rounded ${
+              internalMode === "login"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200"
+            }`}
+          >
+            Login Mode
+          </button>
+        </div>
+      )}
 
       <button
-        onClick={mode === "signup" ? handleSignup : handleLogin}
+        onClick={internalMode === "signup" ? handleSignup : handleLogin}
         disabled={isProcessing}
         className="px-6 py-2 bg-green-500 text-white rounded disabled:bg-gray-400"
       >
         {isProcessing
           ? "Processing..."
-          : mode === "signup"
+          : internalMode === "signup"
           ? "Register Face"
           : "Login with Face"}
       </button>
-
-      {currentUser && (
-        <div className="mt-4 p-4 bg-green-100 rounded">
-          <p>Logged in successfully! User ID: {currentUser.id}</p>
-        </div>
-      )}
-
-      {users.length > 0 && (
-        <div className="mt-4">
-          <p>Registered users: {users.length}</p>
-        </div>
-      )}
     </div>
   );
 }

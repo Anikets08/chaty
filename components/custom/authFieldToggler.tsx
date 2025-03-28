@@ -7,6 +7,13 @@ import { ToastContainer, toast } from "react-toastify";
 import loginService from "@/services/auth/login.auth";
 import { useRouter } from "next/navigation";
 import signupService from "@/services/auth/signup.auth";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import FaceRecognitionLogin from "@/utils/faceDetector";
 
 type LoginFormData = {
   email: string;
@@ -21,6 +28,20 @@ function AuthFieldToggler() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [isSignup, setIsSignup] = useState(false);
+  const [showFaceDialog, setShowFaceDialog] = useState(false);
+  const [faceDescriptor, setFaceDescriptor] = useState<Float32Array | null>(
+    null
+  );
+  const [token, setToken] = useState<string | null>(null);
+  const [signupData, setSignupData] = useState<{
+    userName: string;
+    email: string;
+    password: string;
+  } | null>(null);
+  const [loginData, setLoginData] = useState<{
+    email: string;
+    password: string;
+  } | null>(null);
   const [formData, setFormData] = useState<LoginFormData | SignupFormData>({
     email: "",
     password: "",
@@ -62,32 +83,77 @@ function AuthFieldToggler() {
       // Handle form submission based on auth type
       setLoading(true);
       if (isSignup) {
-        try {
-          await signupService({
-            userName: (formData as SignupFormData).userName,
-            email: formData.email,
-            password: formData.password,
-            faceData: "",
-          });
-          router.replace("/");
-        } catch (message) {
-          console.log("Error:", message);
-          toast.error(message as string);
-        }
+        // For signup, first show face detection dialog
+        setSignupData({
+          userName: (formData as SignupFormData).userName,
+          email: formData.email,
+          password: formData.password,
+        });
+        setShowFaceDialog(true);
+        setLoading(false);
       } else {
-        try {
-          await loginService(formData);
-          router.replace("/");
-        } catch (message) {
-          console.log("Error:", message);
-          toast.error(message as string);
+        // For login, also show face verification dialog
+        setLoginData({
+          email: formData.email,
+          password: formData.password,
+        });
+        const token = await loginService({
+          email: formData.email,
+          password: formData.password,
+        });
+        if (token) {
+          setToken(token);
+          setShowFaceDialog(true);
+          setLoading(false);
         }
       }
-      setLoading(false);
     },
     [formData, isSignup]
   );
 
+  // Handle face capture completion
+  const handleFaceCaptured = useCallback(
+    async (descriptor: Float32Array) => {
+      console.log("descriptor", descriptor);
+      if (isSignup && signupData) {
+        setFaceDescriptor(descriptor);
+        setShowFaceDialog(false);
+        setLoading(true);
+
+        try {
+          // Convert Float32Array to string for storage
+          const faceDataString = Array.from(descriptor).toString();
+
+          await signupService({
+            userName: signupData.userName,
+            email: signupData.email,
+            password: signupData.password,
+            faceData: faceDataString,
+          });
+          toast.success("Signup successful!");
+          router.replace("/");
+        } catch (message) {
+          console.log("Error:", message);
+          toast.error(message as string);
+        }
+        setLoading(false);
+      }
+    },
+    [signupData, loginData, isSignup, router]
+  );
+
+  const handleFaceVerification = useCallback(
+    (success: boolean) => {
+      if (success) {
+        toast.success("Login successful!");
+        localStorage.setItem("token", token as string);
+        router.replace("/");
+      } else {
+        toast.error("Login failed!");
+      }
+    },
+    [router]
+  );
   // Render form fields dynamically
   const renderFormFields = useCallback(() => {
     const fields = [
@@ -112,7 +178,7 @@ function AuthFieldToggler() {
 
   return (
     <>
-      <div className="w-1/2 h-full flex flex-col items-center justify-center gap-10">
+      <div className="w-3/4 h-full flex flex-col items-center justify-center gap-10">
         <div className="flex flex-col items-center justify-center">
           <h1 className="text-4xl font-black leading-tight tracking-tighter flex items-center">
             <Send className="w-8 h-8" />
@@ -149,6 +215,38 @@ function AuthFieldToggler() {
           </a>
         </div>
       </div>
+
+      <Dialog
+        open={showFaceDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            setLoading(false);
+          }
+          setShowFaceDialog(open);
+        }}
+      >
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>
+              {isSignup ? "Facial Recognition Setup" : "Face Verification"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="mb-4">
+              {isSignup
+                ? "Please look at the camera to register your face for login verification."
+                : "Please look at the camera to verify your identity."}
+            </p>
+            <FaceRecognitionLogin
+              mode={isSignup ? "signup" : "login"}
+              onFaceCaptured={handleFaceCaptured}
+              onDoneVerification={handleFaceVerification}
+              token={token}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <ToastContainer
         position="bottom-left"
         autoClose={3000}

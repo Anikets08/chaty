@@ -4,7 +4,9 @@ const loginService = async ({
 }: {
   email: string;
   password: string;
-}) => {
+  faceData?: string;
+}): Promise<string | undefined> => {
+  let token: string | undefined;
   const response = await fetch("/api/auth/login", {
     method: "POST",
     headers: {
@@ -13,10 +15,11 @@ const loginService = async ({
     body: JSON.stringify({ email, password }),
   });
   const data = await response.json();
-  if (response.ok) {
-    localStorage.setItem("token", data.token);
-  } else {
-    throw new Error(data.message);
+  if (!response.ok) {
+    throw data.message;
   }
+  token = data.token;
+  return token;
 };
+
 export default loginService;

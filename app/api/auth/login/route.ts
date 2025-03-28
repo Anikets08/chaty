@@ -7,23 +7,18 @@ const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-
   const { email, password } = body;
-
   try {
     const user = await prisma.user.findUnique({
       where: { email },
     });
-
     if (!user) {
       return NextResponse.json(
         { message: "Invalid credentials" },
         { status: 401 }
       );
     }
-
     const isPasswordValid = await bcrypt.compare(password, user.password);
-
     if (!isPasswordValid) {
       return NextResponse.json(
         { message: "Invalid credentials" },

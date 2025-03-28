@@ -10,7 +10,7 @@ export default function Home() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
-      router.push("/signup");
+      router.push("/login");
     }
   }, []);
   return (
