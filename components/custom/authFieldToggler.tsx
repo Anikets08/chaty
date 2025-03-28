@@ -29,9 +29,9 @@ function AuthFieldToggler() {
   const [loading, setLoading] = useState(false);
   const [isSignup, setIsSignup] = useState(false);
   const [showFaceDialog, setShowFaceDialog] = useState(false);
-  const [faceDescriptor, setFaceDescriptor] = useState<Float32Array | null>(
-    null
-  );
+  // const [faceDescriptor, setFaceDescriptor] = useState<Float32Array | null>(
+  //   null
+  // );
   const [token, setToken] = useState<string | null>(null);
   const [signupData, setSignupData] = useState<{
     userName: string;
@@ -116,7 +116,7 @@ function AuthFieldToggler() {
     async (descriptor: Float32Array) => {
       console.log("descriptor", descriptor);
       if (isSignup && signupData) {
-        setFaceDescriptor(descriptor);
+        // setFaceDescriptor(descriptor);
         setShowFaceDialog(false);
         setLoading(true);
 
@@ -152,7 +152,7 @@ function AuthFieldToggler() {
         toast.error("Login failed!");
       }
     },
-    [router]
+    [router, token]
   );
   // Render form fields dynamically
   const renderFormFields = useCallback(() => {
@@ -199,11 +199,6 @@ function AuthFieldToggler() {
         </form>
 
         <div className="flex flex-col items-center justify-start gap-2 w-1/2">
-          {!isSignup && (
-            <a href="" className="text-sm text-gray-500 hover:text-gray-700">
-              Forgot Password?
-            </a>
-          )}
           <a
             href=""
             className="text-sm text-gray-500 hover:text-gray-700"

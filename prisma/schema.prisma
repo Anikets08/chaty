@@ -14,11 +14,35 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   userName  String
-  email     String   @unique
+  email     String     @unique
   password  String
   faceData  String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  rooms     ChatRoom[] @relation("RoomMembers")
+  messages  Message[]
+}
+
+model ChatRoom {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  members     User[]    @relation("RoomMembers")
+  messages    Message[]
+  createdBy   String // userId of the creator
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  roomId    String
+  room      ChatRoom @relation(fields: [roomId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
 }

@@ -1,53 +1,68 @@
 "use client";
-import { Button } from "@/components/ui/button";
-import logoutService from "@/services/auth/logout.auth";
-import Image from "next/image";
+import Room from "@/components/custom/chat/room";
+import RoomSidebar from "@/components/custom/chat/roomSidebar";
+import Sidebar from "@/components/custom/sidebar/sidebar";
+import getUserName from "@/services/user/getUserName.user";
+import useUserStore from "@/store/userStore";
+import useWebSocketStore from "@/store/websocketStore";
+import { decode, JwtPayload } from "jsonwebtoken";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 export default function Home() {
   const router = useRouter();
+  const { userId, setUserId, userName, setUserName } = useUserStore();
+  const { connect, disconnect, isConnected } = useWebSocketStore();
+
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) {
+    if (token === null || token === undefined) {
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const decodedToken = decode(token) as JwtPayload;
+      const getUserId = decodedToken?.userId;
+      console.log("getUserId", getUserId);
+      if (getUserId && !userId) {
+        setUserId(getUserId);
+      }
+      if (!userName) {
+        fetchUserName();
+      }
+    } catch (error) {
+      console.error("Error decoding token:", error);
       router.push("/login");
     }
   }, []);
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <Button
-            onClick={() => {
-              logoutService();
-              router.push("/login");
-            }}
-          >
-            Logout
-          </Button>
-        </div>
-      </main>
+  const fetchUserName = async () => {
+    const token = localStorage.getItem("token");
+    if (token === null || token === undefined) {
+      return;
+    }
+    const userName = await getUserName(token);
+    if (userName) {
+      setUserName(userName);
+    }
+  };
+
+  // websocket connection
+  useEffect(() => {
+    if (userId && !isConnected) {
+      connect();
+    }
+    return () => {
+      disconnect();
+    };
+  }, []);
+
+  return (
+    <div className="flex h-screen">
+      <Sidebar />
+      <Room />
+      <RoomSidebar />
     </div>
   );
 }

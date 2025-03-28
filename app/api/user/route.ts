@@ -28,7 +28,6 @@ export async function GET(request: NextRequest) {
     // Get user from database
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      select: { id: true, faceData: true },
     });
 
     if (!user) {
@@ -36,7 +35,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Return face data
-    return NextResponse.json({ faceData: user.faceData }, { status: 200 });
+    return NextResponse.json(user, { status: 200 });
   } catch (error) {
     console.error("Error fetching user face data:", error);
     return NextResponse.json(

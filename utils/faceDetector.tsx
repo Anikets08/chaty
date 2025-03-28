@@ -1,4 +1,4 @@
-import getUserByToken from "@/services/user/getUserByToken.user";
+import getUserFacedata from "@/services/user/getUserFacedata.user";
 import * as faceapi from "face-api.js";
 import { useEffect, useRef, useState } from "react";
 
@@ -94,7 +94,7 @@ function FaceRecognitionLogin({
         .withFaceDescriptor();
 
       if (detection) {
-        const dbUserDescriptor = await getUserByToken(token);
+        const dbUserDescriptor = await getUserFacedata(token);
         if (dbUserDescriptor === null || dbUserDescriptor === undefined) return;
         const float32DbUserDescriptor = new Float32Array(
           dbUserDescriptor.split(",").map(Number)

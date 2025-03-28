@@ -1,4 +1,4 @@
-const getUserByToken = async (token: string): Promise<string | undefined> => {
+const getUserFacedata = async (token: string): Promise<string | undefined> => {
   try {
     const response = await fetch(`/api/user/facedata`, {
       method: "GET",
@@ -17,9 +17,9 @@ const getUserByToken = async (token: string): Promise<string | undefined> => {
     const data = await response.json();
     return data.faceData;
   } catch (error) {
-    console.error("Error in getUserByToken service:", error);
+    console.error("Error in getUserFacedata service:", error);
     return undefined;
   }
 };
 
-export default getUserByToken;
+export default getUserFacedata;
