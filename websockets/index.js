@@ -2,8 +2,8 @@ const WebSocket = require("ws");
 
 // Enable WebSocket server debugging
 const DEBUG = true;
-// process.env.NODE_ENV === "development";
 const PORT = process.env.PORT || 2134;
+
 // Create a WebSocket server completely detached from the HTTP server.
 const wss = new WebSocket.Server({
   port: PORT,
