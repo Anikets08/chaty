@@ -64,7 +64,7 @@ const stableConnect = (() => {
         const provider =
           process.env.NODE_ENV === "development"
             ? `ws://localhost:2134`
-            : `wss://chaty-ay2m.onrender.com:1000`;
+            : `wss://chaty-ay2m.onrender.com`;
         globalSocket = new WebSocket(provider);
 
         globalSocket.onopen = () => {

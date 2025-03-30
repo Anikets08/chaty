@@ -1,16 +1,12 @@
-const express = require("express");
-const app = express();
-const PORT = process.env.PORT || 2134;
 const WebSocket = require("ws");
 
 // Enable WebSocket server debugging
 const DEBUG = true;
-const server = app.listen(PORT, () => {
-  console.log(`HTTP Server running on port ${PORT}`);
-});
+// process.env.NODE_ENV === "development";
+const PORT = process.env.PORT || 2134;
 // Create a WebSocket server completely detached from the HTTP server.
 const wss = new WebSocket.Server({
-  server,
+  port: PORT,
 });
 
 // Store active rooms and their members with user IDs
@@ -159,6 +155,7 @@ function removeFromRoom(ws, roomId) {
 let connectionCounter = 0;
 
 wss.on("connection", function connection(ws) {
+  console.log("Connection received at PORT", PORT);
   const connectionId = ++connectionCounter;
   ws.connectionId = connectionId;
   console.log(
@@ -279,24 +276,4 @@ const interval = setInterval(function ping() {
 wss.on("close", function close() {
   console.log("WebSocket server closing");
   clearInterval(interval);
-});
-
-app.get("/", (req, res) => {
-  res.send("WebSocket server is running!");
-});
-
-app.get("/stats", (req, res) => {
-  const stats = {
-    clients: wss.clients.size,
-    rooms: Array.from(rooms.keys()),
-    users: Array.from(userConnections.keys()),
-    roomDetails: Object.fromEntries(
-      Array.from(rooms.entries()).map(([roomId, members]) => [
-        roomId,
-        Array.from(members.values()),
-      ])
-    ),
-  };
-
-  res.json(stats);
 });
