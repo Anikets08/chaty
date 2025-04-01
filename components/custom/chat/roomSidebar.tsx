@@ -57,11 +57,7 @@ function RoomSidebar() {
   );
 
   if (!selectedRoomId) {
-    return (
-      <div className="sidebar h-full w-[200px] bg-gray-100 p-4 flex flex-col gap-4 items-center justify-center">
-        <p className="text-sm text-gray-500">Select a room to see members</p>
-      </div>
-    );
+    return <div className=""></div>;
   }
 
   return (

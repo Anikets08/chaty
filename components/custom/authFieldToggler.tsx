@@ -93,17 +93,22 @@ function AuthFieldToggler() {
         setLoading(false);
       } else {
         // For login, also show face verification dialog
-        setLoginData({
-          email: formData.email,
-          password: formData.password,
-        });
-        const token = await loginService({
-          email: formData.email,
-          password: formData.password,
-        });
-        if (token) {
-          setToken(token);
-          setShowFaceDialog(true);
+        try {
+          setLoginData({
+            email: formData.email,
+            password: formData.password,
+          });
+          const token = await loginService({
+            email: formData.email,
+            password: formData.password,
+          });
+          if (token) {
+            setToken(token);
+            setShowFaceDialog(true);
+          }
+        } catch (error) {
+          toast.error(error as string);
+        } finally {
           setLoading(false);
         }
       }
@@ -176,7 +181,7 @@ function AuthFieldToggler() {
 
   return (
     <>
-      <div className="w-3/4 h-full flex flex-col items-center justify-center gap-10">
+      <div className="w-full md:w-2/4 h-full flex flex-col items-center justify-center gap-10">
         <div className="flex flex-col items-center justify-center">
           <h1 className="text-4xl font-black leading-tight tracking-tighter flex items-center">
             <Send className="w-8 h-8" />
